@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0c">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Tesla Charge Companion 2.2</title>
+<title>Tesla Charge Companion 2.3</title>
 <style>
 :root{--bg:#0b0b0c;--card:#19191c;--text:#fff;--muted:#a1a1aa;--line:#313137;--accent:#e82127;--good:#22c55e;--warn:#f59e0b;--bad:#ef4444}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif}
@@ -17,7 +17,7 @@ main{max-width:860px;margin:auto;padding:14px 14px 90px}.panel{display:none}.pan
 input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;border:1px solid var(--line);border-radius:12px;padding:12px}textarea{min-height:80px}
 .primary{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;font-weight:800;padding:14px;margin-top:14px}.secondary{border:1px solid var(--line);border-radius:12px;background:#111;color:#fff;padding:9px 11px;font-weight:700}.danger{border:0;border-radius:10px;background:#3a1418;color:#ff9ca1;padding:9px 11px}
 .station{padding:14px 0;border-bottom:1px solid var(--line)}.station:last-child{border-bottom:0}.station-head{display:flex;justify-content:space-between;gap:12px}.station h3{margin:0 0 5px;font-size:16px}.cost{font-size:20px;font-weight:900;text-align:right}.small{font-size:12px;line-height:1.45;color:var(--muted)}.badge{display:inline-block;border-radius:999px;padding:4px 7px;background:#29292e;font-size:11px;margin:3px 4px 3px 0}
-.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.routeinfo{margin-top:7px;padding:8px 10px;border-radius:11px;background:#101012;border:1px solid var(--line);font-size:12px}.routeinfo b{font-size:13px}.loading{opacity:.65;pointer-events:none}.box{border-radius:14px;padding:12px;background:#111;border:1px solid var(--line);margin-top:10px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.disabled-station{opacity:.62}.badge-unavailable{background:#3a1418;color:#ff9ca1}.routeinfo{margin-top:7px;padding:8px 10px;border-radius:11px;background:#101012;border:1px solid var(--line);font-size:12px}.routeinfo b{font-size:13px}.loading{opacity:.65;pointer-events:none}.box{border-radius:14px;padding:12px;background:#111;border:1px solid var(--line);margin-top:10px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .dayrow{display:grid;grid-template-columns:52px 80px 1fr 1fr;gap:8px;align-items:center;margin:8px 0}.dayrow input[type=checkbox]{width:auto}
 @media(max-width:560px){.grid{grid-template-columns:1fr 1fr}.dayrow{grid-template-columns:42px 68px 1fr 1fr}}
 </style>
@@ -25,7 +25,7 @@ input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;bord
 <body>
 <header>
 <h1>⚡ Tesla Charge Companion</h1>
-<p>Version 2.2 · distances et temps de trajet vers chaque borne</p>
+<p>Version 2.3 · gestion des bornes temporairement indisponibles</p>
 <nav>
 <button class="active" data-tab="compare">Comparer</button>
 <button data-tab="stations">Bornes</button>
@@ -64,6 +64,10 @@ input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;bord
 <div><label>Prix simple au kWh (€)</label><input id="fPrice" type="number" step=".001" value=".29"></div>
 <div><label>Dernière mise à jour</label><input id="fUpdated" type="date"></div>
 <div class="full"><label><input id="fLimited" type="checkbox" style="width:auto"> Accessibilité limitée à certains horaires</label></div>
+<div class="full box">
+<label style="margin:0"><input id="fTemporarilyUnavailable" type="checkbox" style="width:auto"> Borne temporairement indisponible</label>
+<div class="small" style="margin-top:6px">Elle restera visible dans la liste des bornes, mais sera exclue des résultats de comparaison.</div>
+</div>
 <div class="full box"><b>Comportement à la fermeture</b>
 <select id="fCloseMode" style="margin-top:8px">
 <option value="must_stop">Arrêt obligatoire et sortie avant la fermeture</option>
@@ -134,7 +138,7 @@ async function resolveOrigin(originText){
 }
 async function calculateRoutes(){
  let originText=$('simOrigin').value.trim()||localStorage.getItem('tccDefaultOrigin')||'Ma position';
- let routable=stations.filter(s=>s.address&&s.address.trim());
+ let routable=stations.filter(s=>!s.temporarilyUnavailable&&s.address&&s.address.trim());
  if(!routable.length){$('routeStatus').innerHTML='<span class="warn">Aucune borne ne possède d’adresse.</span>';return}
  let button=$('routeButton');button.classList.add('loading');button.textContent='Calcul en cours…';
  $('routeStatus').textContent='Recherche de l’adresse de départ…';
@@ -232,8 +236,12 @@ function compare(){
  let now=+$('simNow').value,target=+$('simTarget').value,date=$('simDate').value,time=$('simTime').value;
  let condition=$('simCondition').value,profile=$('simProfile').value;
  if(target<=now){$('results').innerHTML='<div class="bad">Objectif invalide.</div>';return}
- let rows=stations.map(st=>({st,r:simulate(st,date,time,now,target,condition,profile)}));
+ let rows=stations.filter(st=>!st.temporarilyUnavailable).map(st=>({st,r:simulate(st,date,time,now,target,condition,profile)}));
  rows.sort((x,y)=>(x.r.unavailable||x.r.unknown?999:x.r.total)-(y.r.unavailable||y.r.unknown?999:y.r.total));
+ if(!rows.length){
+  $('results').innerHTML='<div class="warn"><b>Aucune borne disponible à comparer.</b><br>Réactive au moins une borne depuis l’onglet Bornes.</div>';
+  return;
+ }
  $('results').innerHTML=rows.map(({st,r})=>{
   if(r.unavailable)return`<div class="station"><div class="station-head"><div><h3>${st.name}</h3><div class="small">${r.message}</div></div><div class="bad"><b>Indisponible</b></div></div></div>`;
   if(r.unknown)return`<div class="station"><div class="station-head"><div><h3>${st.name}</h3><div class="small">${fmtMin(r.allowed)} nécessaires · fin estimée : ${finishTime(date,time,r.allowed)}</div></div><div class="warn"><b>Tarif incomplet</b></div></div></div>`;
@@ -250,11 +258,36 @@ function mapsUrl(a){
  if(origin&&origin.toLowerCase()!=='ma position')url+='&origin='+encodeURIComponent(origin);
  return url
 }
-function renderStations(){$('stationList').innerHTML=stations.map(st=>`<div class="station"><div class="station-head"><div><h3>${st.name}</h3><div class="small">${st.address||'Aucune adresse'}<br>${st.access?.limited?(st.access.afterCloseMode==='exit_allowed'?'Charge possible après fermeture':'Arrêt obligatoire à la fermeture'):'Sans restriction horaire enregistrée'}</div>${routeHtml(st)}</div></div><div class="row" style="margin-top:10px">${st.address?`<button class="secondary" onclick="window.open('${mapsUrl(st.address)}','_blank')">Itinéraire Google Maps</button>`:''}<button class="secondary" onclick="editStation('${st.id}')">Modifier</button><button class="danger" onclick="deleteStation('${st.id}')">Supprimer</button></div></div>`).join('')}
+function renderStations(){
+ $('stationList').innerHTML=stations.map(st=>`<div class="station ${st.temporarilyUnavailable?'disabled-station':''}">
+ <div class="station-head">
+  <div>
+   <h3>${st.name}</h3>
+   ${st.temporarilyUnavailable?'<span class="badge badge-unavailable">Temporairement indisponible</span>':''}
+   <div class="small">${st.address||'Aucune adresse'}<br>${st.access?.limited?(st.access.afterCloseMode==='exit_allowed'?'Charge possible après fermeture':'Arrêt obligatoire à la fermeture'):'Sans restriction horaire enregistrée'}</div>
+   ${routeHtml(st)}
+  </div>
+ </div>
+ <div class="row" style="margin-top:10px">
+  ${st.address?`<button class="secondary" onclick="window.open('${mapsUrl(st.address)}','_blank')">Itinéraire Google Maps</button>`:''}
+  <button class="secondary" onclick="toggleStationAvailability('${st.id}')">${st.temporarilyUnavailable?'Réactiver':'Marquer indisponible'}</button>
+  <button class="secondary" onclick="editStation('${st.id}')">Modifier</button>
+  <button class="danger" onclick="deleteStation('${st.id}')">Supprimer</button>
+ </div>
+ </div>`).join('')
+}
+function toggleStationAvailability(id){
+ let st=stations.find(x=>x.id===id);
+ if(!st)return;
+ st.temporarilyUnavailable=!st.temporarilyUnavailable;
+ saveLocal();
+ renderStations();
+ compare();
+}
 function buildDays(){$('daysForm').innerHTML=DAYS.map((d,i)=>`<div class="dayrow"><b>${d}</b><label><input id="dOpen${i}" type="checkbox"> ouvert</label><input id="dStart${i}" type="time" value="09:00"><input id="dEnd${i}" type="time" value="20:00"></div>`).join('')}
-function resetForm(){$('formTitle').textContent='Ajouter une borne';$('editId').value='';$('fName').value='';$('fAddress').value='';$('fKind').value='AC';$('fPower').value=11;$('fPrice').value=.29;$('fLimited').checked=false;$('fCloseMode').value='must_stop';$('fCloseNote').value='';$('fUpdated').valueAsDate=new Date();for(let i=0;i<7;i++){$('dOpen'+i).checked=i!==0;$('dStart'+i).value='09:00';$('dEnd'+i).value='20:00'}}
-function editStation(id){let st=stations.find(x=>x.id===id);if(!st)return;document.querySelector('[data-tab="edit"]').click();$('formTitle').textContent='Modifier la borne';$('editId').value=st.id;$('fName').value=st.name;$('fAddress').value=st.address||'';$('fKind').value=st.kind;$('fPower').value=st.powerKw;$('fPrice').value=st.pricing.pricePerKwh??.29;$('fLimited').checked=!!st.access?.limited;$('fCloseMode').value=st.access?.afterCloseMode||'must_stop';$('fCloseNote').value=st.access?.afterCloseNote||'';$('fUpdated').value=st.lastUpdated||new Date().toISOString().slice(0,10);for(let i=0;i<7;i++){let d=st.access?.days?.[String(i)]||{open:true,start:'09:00',end:'20:00'};$('dOpen'+i).checked=d.open;$('dStart'+i).value=d.start;$('dEnd'+i).value=d.end}}
-function saveStation(){let id=$('editId').value||('station-'+Date.now()),days={};for(let i=0;i<7;i++)days[String(i)]={open:$('dOpen'+i).checked,start:$('dStart'+i).value,end:$('dEnd'+i).value};let st={id,name:$('fName').value.trim()||'Nouvelle borne',address:$('fAddress').value.trim(),kind:$('fKind').value,powerKw:+$('fPower').value,pricing:{type:'kwh',pricePerKwh:+$('fPrice').value},lastUpdated:$('fUpdated').value,access:{limited:$('fLimited').checked,days,afterCloseMode:$('fCloseMode').value,afterCloseNote:$('fCloseNote').value.trim()}};let i=stations.findIndex(x=>x.id===id);if(i>=0)stations[i]=st;else stations.push(st);saveLocal();renderStations();resetForm();alert('Borne enregistrée.')}
+function resetForm(){$('formTitle').textContent='Ajouter une borne';$('editId').value='';$('fName').value='';$('fAddress').value='';$('fKind').value='AC';$('fPower').value=11;$('fPrice').value=.29;$('fLimited').checked=false;$('fTemporarilyUnavailable').checked=false;$('fCloseMode').value='must_stop';$('fCloseNote').value='';$('fUpdated').valueAsDate=new Date();for(let i=0;i<7;i++){$('dOpen'+i).checked=i!==0;$('dStart'+i).value='09:00';$('dEnd'+i).value='20:00'}}
+function editStation(id){let st=stations.find(x=>x.id===id);if(!st)return;document.querySelector('[data-tab="edit"]').click();$('formTitle').textContent='Modifier la borne';$('editId').value=st.id;$('fName').value=st.name;$('fAddress').value=st.address||'';$('fKind').value=st.kind;$('fPower').value=st.powerKw;$('fPrice').value=st.pricing.pricePerKwh??.29;$('fLimited').checked=!!st.access?.limited;$('fTemporarilyUnavailable').checked=!!st.temporarilyUnavailable;$('fCloseMode').value=st.access?.afterCloseMode||'must_stop';$('fCloseNote').value=st.access?.afterCloseNote||'';$('fUpdated').value=st.lastUpdated||new Date().toISOString().slice(0,10);for(let i=0;i<7;i++){let d=st.access?.days?.[String(i)]||{open:true,start:'09:00',end:'20:00'};$('dOpen'+i).checked=d.open;$('dStart'+i).value=d.start;$('dEnd'+i).value=d.end}}
+function saveStation(){let id=$('editId').value||('station-'+Date.now()),days={};for(let i=0;i<7;i++)days[String(i)]={open:$('dOpen'+i).checked,start:$('dStart'+i).value,end:$('dEnd'+i).value};let st={id,name:$('fName').value.trim()||'Nouvelle borne',address:$('fAddress').value.trim(),kind:$('fKind').value,powerKw:+$('fPower').value,pricing:{type:'kwh',pricePerKwh:+$('fPrice').value},lastUpdated:$('fUpdated').value,temporarilyUnavailable:$('fTemporarilyUnavailable').checked,access:{limited:$('fLimited').checked,days,afterCloseMode:$('fCloseMode').value,afterCloseNote:$('fCloseNote').value.trim()}};let i=stations.findIndex(x=>x.id===id);if(i>=0)stations[i]=st;else stations.push(st);saveLocal();renderStations();resetForm();alert('Borne enregistrée.')}
 function deleteStation(id){if(confirm('Supprimer cette borne ?')){stations=stations.filter(x=>x.id!==id);saveLocal();renderStations()}}
 fetch('stations.json').then(r=>r.json()).then(x=>{defaultStations=x;let saved=localStations();if(saved)stations=saved;else{let custom=oldCustomStations();stations=[...x,...custom];saveLocal()}compare();renderStations()});
 buildDays();resetForm();
