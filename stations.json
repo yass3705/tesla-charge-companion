@@ -1,0 +1,657 @@
+[
+  {
+    "id": "lidl-saint-cyr",
+    "name": "Lidl Saint-Cyr",
+    "kind": "AC",
+    "powerKw": 11,
+    "address": "104 Avenue Pierre Curie, 78210 Saint-Cyr-l'École",
+    "pricing": {
+      "type": "kwh",
+      "pricePerKwh": 0.29
+    },
+    "access": {
+      "limited": true,
+      "days": {
+        "0": {
+          "open": false,
+          "start": "08:30",
+          "end": "20:00"
+        },
+        "1": {
+          "open": true,
+          "start": "08:30",
+          "end": "20:00"
+        },
+        "2": {
+          "open": true,
+          "start": "08:30",
+          "end": "20:00"
+        },
+        "3": {
+          "open": true,
+          "start": "08:30",
+          "end": "20:00"
+        },
+        "4": {
+          "open": true,
+          "start": "08:30",
+          "end": "20:00"
+        },
+        "5": {
+          "open": true,
+          "start": "08:30",
+          "end": "20:00"
+        },
+        "6": {
+          "open": true,
+          "start": "08:30",
+          "end": "20:00"
+        }
+      },
+      "afterCloseMode": "must_stop",
+      "afterCloseNote": "Le parking ferme à 20 h : il faut arrêter la charge et sortir avant la fermeture."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "tesla-les-clayes",
+    "name": "Tesla Grand Frais – Les Clayes",
+    "kind": "DC",
+    "powerKw": 250,
+    "address": "4 Avenue Lucie Aubrac, 78340 Les Clayes-sous-Bois",
+    "pricing": {
+      "type": "timeBandsKwh",
+      "bands": [
+        {
+          "start": "09:00",
+          "end": "10:00",
+          "pricePerKwh": 0.29
+        },
+        {
+          "start": "10:00",
+          "end": "19:00",
+          "pricePerKwh": 0.43
+        },
+        {
+          "start": "19:00",
+          "end": "23:00",
+          "pricePerKwh": 0.37
+        },
+        {
+          "start": "23:00",
+          "end": "24:00",
+          "pricePerKwh": 0.22
+        },
+        {
+          "start": "00:00",
+          "end": "08:00",
+          "pricePerKwh": 0.22
+        },
+        {
+          "start": "08:00",
+          "end": "09:00",
+          "pricePerKwh": 0.29
+        }
+      ]
+    },
+    "access": {
+      "limited": true,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "09:00",
+          "end": "12:30"
+        },
+        "1": {
+          "open": true,
+          "start": "09:00",
+          "end": "20:00"
+        },
+        "2": {
+          "open": true,
+          "start": "09:00",
+          "end": "20:00"
+        },
+        "3": {
+          "open": true,
+          "start": "09:00",
+          "end": "20:00"
+        },
+        "4": {
+          "open": true,
+          "start": "09:00",
+          "end": "20:00"
+        },
+        "5": {
+          "open": true,
+          "start": "09:00",
+          "end": "20:00"
+        },
+        "6": {
+          "open": true,
+          "start": "09:00",
+          "end": "20:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Il faut entrer avant la fermeture du magasin ; la charge peut continuer et la sortie reste possible après fermeture."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "tesla-parly2",
+    "name": "Tesla Parly 2 – Le Chesnay",
+    "kind": "DC",
+    "powerKw": 250,
+    "address": "Westfield Parly 2, Le Chesnay-Rocquencourt",
+    "pricing": {
+      "type": "timeBandsKwh",
+      "bands": [
+        {
+          "start": "00:00",
+          "end": "10:00",
+          "pricePerKwh": 0.23
+        },
+        {
+          "start": "10:00",
+          "end": "19:00",
+          "pricePerKwh": 0.43
+        },
+        {
+          "start": "19:00",
+          "end": "24:00",
+          "pricePerKwh": 0.31
+        }
+      ]
+    },
+    "access": {
+      "limited": false,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "1": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "2": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "3": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "4": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "5": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "6": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Accessible 24 h/24."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "tesla-velizy",
+    "name": "Tesla Vélizy",
+    "kind": "DC",
+    "powerKw": 250,
+    "address": "Vélizy-Villacoublay",
+    "pricing": {
+      "type": "timeBandsKwh",
+      "bands": [
+        {
+          "start": "00:00",
+          "end": "10:00",
+          "pricePerKwh": 0.23
+        },
+        {
+          "start": "10:00",
+          "end": "19:00",
+          "pricePerKwh": 0.42
+        },
+        {
+          "start": "19:00",
+          "end": "23:00",
+          "pricePerKwh": 0.3
+        },
+        {
+          "start": "23:00",
+          "end": "24:00",
+          "pricePerKwh": 0.23
+        }
+      ]
+    },
+    "access": {
+      "limited": false,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "1": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "2": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "3": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "4": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "5": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "6": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Accessibilité à confirmer sur place."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "tesla-buchelay",
+    "name": "Tesla Buchelay",
+    "kind": "DC",
+    "powerKw": 250,
+    "address": "Buchelay, 78200",
+    "pricing": {
+      "type": "timeBandsKwh",
+      "bands": [
+        {
+          "start": "00:00",
+          "end": "09:00",
+          "pricePerKwh": 0.19
+        },
+        {
+          "start": "09:00",
+          "end": "20:00",
+          "pricePerKwh": 0.43
+        },
+        {
+          "start": "20:00",
+          "end": "24:00",
+          "pricePerKwh": 0.27
+        }
+      ]
+    },
+    "access": {
+      "limited": false,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "1": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "2": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "3": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "4": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "5": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "6": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Accessibilité à confirmer sur place."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "tesla-orgeval",
+    "name": "Tesla Orgeval",
+    "kind": "DC",
+    "powerKw": 250,
+    "address": "Orgeval, 78630",
+    "pricing": {
+      "type": "timeBandsKwh",
+      "bands": [
+        {
+          "start": "00:00",
+          "end": "08:00",
+          "pricePerKwh": 0.25
+        },
+        {
+          "start": "08:00",
+          "end": "12:00",
+          "pricePerKwh": 0.34
+        },
+        {
+          "start": "12:00",
+          "end": "20:00",
+          "pricePerKwh": 0.43
+        },
+        {
+          "start": "20:00",
+          "end": "24:00",
+          "pricePerKwh": 0.34
+        }
+      ]
+    },
+    "access": {
+      "limited": false,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "1": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "2": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "3": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "4": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "5": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "6": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Accessibilité à confirmer sur place."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "tesla-coignieres",
+    "name": "Tesla Coignières",
+    "kind": "DC",
+    "powerKw": 250,
+    "address": "Coignières, 78310",
+    "pricing": {
+      "type": "kwh",
+      "pricePerKwh": 0.36
+    },
+    "access": {
+      "limited": false,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "1": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "2": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "3": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "4": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "5": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "6": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Accessible 24 h/24 sous réserve des conditions du site."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "izivia-levant",
+    "name": "Izivia – Gymnase du Levant",
+    "kind": "AC",
+    "powerKw": 11,
+    "address": "Gymnase du Levant, Saint-Cyr-l'École",
+    "pricing": {
+      "type": "kwhPlusParking",
+      "pricePerKwh": 0.39,
+      "freeMinutes": 180,
+      "parkingPerMinute": 0.05,
+      "nightCap": 4.0,
+      "nightStart": "20:00",
+      "nightEnd": "08:00"
+    },
+    "access": {
+      "limited": false,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "1": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "2": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "3": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "4": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "5": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "6": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Ouvert 24 h/24."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "alize-galard",
+    "name": "Alizé – Avenue Geneviève de Galard",
+    "kind": "AC",
+    "powerKw": 7,
+    "address": "Avenue Geneviève de Galard, 78210 Saint-Cyr-l'École",
+    "pricing": {
+      "type": "accessPlusTime",
+      "accessFee": 3.45,
+      "freeMinutes": 60,
+      "dayPerHour": 1.15,
+      "dayStart": "08:00",
+      "dayEnd": "20:00",
+      "nightPerHour": 0
+    },
+    "access": {
+      "limited": false,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "1": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "2": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "3": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "4": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "5": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "6": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Stationnement nocturne autorisé. Environ 17 min à pied."
+    },
+    "lastUpdated": "2026-07-10"
+  },
+  {
+    "id": "one-nation",
+    "name": "One Nation Paris",
+    "kind": "AC",
+    "powerKw": 11,
+    "address": "One Nation Paris Outlet, Les Clayes-sous-Bois",
+    "pricing": {
+      "type": "freeWindowUnknownAfter",
+      "freeMinutes": 120
+    },
+    "access": {
+      "limited": false,
+      "days": {
+        "0": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "1": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "2": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "3": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "4": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "5": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        },
+        "6": {
+          "open": true,
+          "start": "00:00",
+          "end": "24:00"
+        }
+      },
+      "afterCloseMode": "exit_allowed",
+      "afterCloseNote": "Deux premières heures gratuites à confirmer ; tarif au-delà inconnu."
+    },
+    "lastUpdated": "2026-07-10"
+  }
+]
