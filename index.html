@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0c">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Tesla Charge Companion 2.3</title>
+<title>Tesla Charge Companion 2.5</title>
 <style>
 :root{--bg:#0b0b0c;--card:#19191c;--text:#fff;--muted:#a1a1aa;--line:#313137;--accent:#e82127;--good:#22c55e;--warn:#f59e0b;--bad:#ef4444}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif}
@@ -18,14 +18,18 @@ input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;bord
 .primary{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;font-weight:800;padding:14px;margin-top:14px}.secondary{border:1px solid var(--line);border-radius:12px;background:#111;color:#fff;padding:9px 11px;font-weight:700}.danger{border:0;border-radius:10px;background:#3a1418;color:#ff9ca1;padding:9px 11px}
 .station{padding:14px 0;border-bottom:1px solid var(--line)}.station:last-child{border-bottom:0}.station-head{display:flex;justify-content:space-between;gap:12px}.station h3{margin:0 0 5px;font-size:16px}.cost{font-size:20px;font-weight:900;text-align:right}.small{font-size:12px;line-height:1.45;color:var(--muted)}.badge{display:inline-block;border-radius:999px;padding:4px 7px;background:#29292e;font-size:11px;margin:3px 4px 3px 0}
 .good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.disabled-station{opacity:.62}.badge-unavailable{background:#3a1418;color:#ff9ca1}.routeinfo{margin-top:7px;padding:8px 10px;border-radius:11px;background:#101012;border:1px solid var(--line);font-size:12px}.routeinfo b{font-size:13px}.loading{opacity:.65;pointer-events:none}.box{border-radius:14px;padding:12px;background:#111;border:1px solid var(--line);margin-top:10px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.dayrow{display:grid;grid-template-columns:52px 80px 1fr 1fr;gap:8px;align-items:center;margin:8px 0}.dayrow input[type=checkbox]{width:auto}
+.dayrow{display:grid;grid-template-columns:52px 80px 1fr 1fr;gap:8px;align-items:center;margin:8px 0}.dayrow input[type=checkbox]{width:auto}.pricing-rule{margin-top:12px;padding:12px;border-radius:14px;background:#0f0f11;border:1px solid var(--line)}
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.hidden{display:none!important}
+.rule-title{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.rule-title b{font-size:14px}
 @media(max-width:560px){.grid{grid-template-columns:1fr 1fr}.dayrow{grid-template-columns:42px 68px 1fr 1fr}}
 </style>
 </head>
 <body>
 <header>
 <h1>⚡ Tesla Charge Companion</h1>
-<p>Version 2.3 · gestion des bornes temporairement indisponibles</p>
+<p>Version 2.5 · 271 Superchargeurs et classement par proximité</p>
 <nav>
 <button class="active" data-tab="compare">Comparer</button>
 <button data-tab="stations">Bornes</button>
@@ -38,6 +42,7 @@ input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;bord
 <div class="grid">
 <div><label>Date</label><input id="simDate" type="date"></div>
 <div><label>Heure de branchement</label><input id="simTime" type="time"></div>
+<div><label>Heure prévue de débranchement</label><input id="simUnplugTime" type="time"><div class="small" style="margin-top:5px">Optionnel : utilisé pour calculer les frais d’occupation après la fin de charge.</div></div>
 <div class="full"><label>Adresse de départ</label><input id="simOrigin" type="text" placeholder="Ex. Versailles, une adresse précise ou Ma position"></div>
 <div><label>Batterie actuelle (%)</label><input id="simNow" type="number" value="20" min="0" max="100"></div>
 <div><label>Objectif (%)</label><input id="simTarget" type="number" value="80" min="0" max="100"></div>
@@ -46,7 +51,7 @@ input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;bord
 </div>
 <button class="primary" onclick="compare()">Simuler</button>
 <button class="secondary" style="width:100%;margin-top:8px" onclick="saveDefaultOrigin()">Enregistrer cette adresse comme départ par défaut</button>
-<button class="secondary" id="routeButton" style="width:100%;margin-top:8px" onclick="calculateRoutes()">Calculer les distances et temps de trajet</button>
+<button class="secondary" id="routeButton" style="width:100%;margin-top:8px" onclick="calculateRoutes()">Recalculer les 10 Superchargeurs les plus proches</button>
 <div id="routeStatus" class="small" style="margin-top:8px"></div><div class="small" style="margin-top:5px">Données d’adresses © contributeurs OpenStreetMap · itinéraires OSRM. Calcul lancé uniquement sur demande.</div>
 </div>
 <div class="card" id="results"></div>
@@ -61,9 +66,23 @@ input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;bord
 <div><label>Adresse / destination Google Maps</label><input id="fAddress"></div>
 <div><label>Type</label><select id="fKind"><option>AC</option><option>DC</option></select></div>
 <div><label>Puissance (kW)</label><input id="fPower" type="number" value="11"></div>
-<div><label>Prix simple au kWh (€)</label><input id="fPrice" type="number" step=".001" value=".29"></div>
 <div><label>Dernière mise à jour</label><input id="fUpdated" type="date"></div>
-<div class="full"><label><input id="fLimited" type="checkbox" style="width:auto"> Accessibilité limitée à certains horaires</label></div>
+<div class="full box">
+  <div class="row" style="justify-content:space-between">
+    <b>Tarification</b>
+    <button type="button" class="secondary" onclick="addPricingRule()">Ajouter un tarif</button>
+  </div>
+  <div class="small" style="margin-top:7px">Chaque tarif peut s’appliquer toute la journée ou à un créneau horaire. Tu peux cumuler plusieurs créneaux.</div>
+  <div id="pricingRules"></div>
+</div>
+<div class="full box">
+<label>Mode d’accès</label>
+<select id="fAccessMode" onchange="toggleAccessMode()">
+  <option value="always">Accessible 24 h/24</option>
+  <option value="schedule">Horaires définis jour par jour</option>
+</select>
+<div class="small" style="margin-top:6px">Choisis 24 h/24 ou renseigne les horaires d’ouverture pour chaque jour.</div>
+</div>
 <div class="full box">
 <label style="margin:0"><input id="fTemporarilyUnavailable" type="checkbox" style="width:auto"> Borne temporairement indisponible</label>
 <div class="small" style="margin-top:6px">Elle restera visible dans la liste des bornes, mais sera exclue des résultats de comparaison.</div>
@@ -74,7 +93,7 @@ input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;bord
 <option value="exit_allowed">Entrée avant fermeture, charge et sortie possibles ensuite</option>
 </select>
 <label style="margin-top:10px">Information complémentaire</label><textarea id="fCloseNote"></textarea></div>
-<div class="full box"><b>Horaires d’accessibilité</b><div id="daysForm"></div></div>
+<div class="full box" id="scheduleBox"><b>Horaires d’accessibilité</b><div id="daysForm"></div></div>
 </div>
 <button class="primary" onclick="saveStation()">Enregistrer la borne</button>
 <button class="secondary" style="width:100%;margin-top:8px" onclick="resetForm()">Vider le formulaire</button>
@@ -83,10 +102,10 @@ input,select,textarea{width:100%;font:inherit;color:#fff;background:#101012;bord
 <script>
 const DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];let defaultStations=[],stations=[],routeResults={};const $=id=>document.getElementById(id);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='stations')renderStations()});
-$('simDate').valueAsDate=new Date();$('simTime').value=new Date().toTimeString().slice(0,5);$('fUpdated').valueAsDate=new Date();$('simOrigin').value=localStorage.getItem('tccDefaultOrigin')||'';
+$('simDate').valueAsDate=new Date();$('simTime').value=new Date().toTimeString().slice(0,5);$('simUnplugTime').value='';$('fUpdated').valueAsDate=new Date();$('simOrigin').value=localStorage.getItem('tccDefaultOrigin')||'';
 function oldCustomStations(){let a=JSON.parse(localStorage.getItem('tccStationsV14')||'[]');return a.filter(x=>String(x.id||'').startsWith('station-'))}
-function localStations(){return JSON.parse(localStorage.getItem('tccStationsV15')||'null')}
-function saveLocal(){localStorage.setItem('tccStationsV15',JSON.stringify(stations))}
+function localStations(){return JSON.parse(localStorage.getItem('tccStationsV25')||'null')}
+function saveLocal(){localStorage.setItem('tccStationsV25',JSON.stringify(stations))}
 function mins(t){let [h,m]=t.split(':').map(Number);return h*60+m}
 function fmtMin(m){m=Math.max(0,m);let h=Math.floor(m/60),n=Math.round(m%60);return h?`${h} h ${String(n).padStart(2,'0')}`:`${n} min`}
 function finishTime(dateStr,timeStr,durationMin){
@@ -136,50 +155,45 @@ async function resolveOrigin(originText){
  if(!originText||originText.trim().toLowerCase()==='ma position')return getCurrentPosition();
  return geocodeAddress(originText)
 }
-async function calculateRoutes(){
+
+function haversineKm(aLat,aLon,bLat,bLon){
+ const R=6371,toRad=x=>x*Math.PI/180;
+ let dLat=toRad(bLat-aLat),dLon=toRad(bLon-aLon);
+ let q=Math.sin(dLat/2)**2+Math.cos(toRad(aLat))*Math.cos(toRad(bLat))*Math.sin(dLon/2)**2;
+ return 2*R*Math.asin(Math.sqrt(q));
+}
+async function nearestSuperchargers(limit=10){
  let originText=$('simOrigin').value.trim()||localStorage.getItem('tccDefaultOrigin')||'Ma position';
- let routable=stations.filter(s=>!s.temporarilyUnavailable&&s.address&&s.address.trim());
- if(!routable.length){$('routeStatus').innerHTML='<span class="warn">Aucune borne ne possède d’adresse.</span>';return}
- let button=$('routeButton');button.classList.add('loading');button.textContent='Calcul en cours…';
- $('routeStatus').textContent='Recherche de l’adresse de départ…';
+ let origin=await resolveOrigin(originText);
+ let candidates=stations.filter(s=>s.source==='teslaSupercharger'&&!s.temporarilyUnavailable&&Number.isFinite(s.latitude)&&Number.isFinite(s.longitude));
+ candidates.forEach(s=>s._airKm=haversineKm(origin.lat,origin.lon,s.latitude,s.longitude));
+ let shortlist=candidates.sort((a,b)=>a._airKm-b._airKm).slice(0,Math.min(20,candidates.length));
+ if(!shortlist.length)return{origin,stations:[]};
  try{
-  let origin=await resolveOrigin(originText);
-  let coords=[origin],validStations=[];
-  let cache=geoCache();
-  for(let i=0;i<routable.length;i++){
-   let st=routable[i],key=st.address.trim().toLowerCase();
-   $('routeStatus').textContent=`Localisation des bornes : ${i+1}/${routable.length}`;
-   try{
-    let geo=cache[key]||await geocodeAddress(st.address);
-    coords.push(geo);validStations.push(st);
-    cache=geoCache();
-   }catch(err){
-    routeResults[st.id]={error:err.message};
+   let coords=[`${origin.lon},${origin.lat}`,...shortlist.map(s=>`${s.longitude},${s.latitude}`)].join(';');
+   let destinations=shortlist.map((_,i)=>i+1).join(';');
+   let url=`https://router.project-osrm.org/table/v1/driving/${coords}?sources=0&destinations=${destinations}&annotations=distance,duration`;
+   let response=await fetch(url);
+   if(response.ok){
+     let data=await response.json();
+     if(data.code==='Ok'){
+       shortlist.forEach((s,i)=>{
+         let d=data.distances?.[0]?.[i],t=data.durations?.[0]?.[i];
+         if(d!=null&&t!=null)routeResults[s.id]={distanceKm:d/1000,durationMin:t/60,originLabel:origin.label};
+       });
+       shortlist.sort((a,b)=>(routeResults[a.id]?.distanceKm??a._airKm)-(routeResults[b.id]?.distanceKm??b._airKm));
+     }
    }
-   if(!cache[key]&&i<routable.length-1)await sleep(1100);
-  }
-  if(!validStations.length)throw new Error('Aucune adresse de borne n’a pu être reconnue.');
-  $('routeStatus').textContent='Calcul des itinéraires routiers…';
-  let coordinateString=coords.map(c=>`${c.lon},${c.lat}`).join(';');
-  let destinations=validStations.map((_,i)=>i+1).join(';');
-  let osrm=`https://router.project-osrm.org/table/v1/driving/${coordinateString}?sources=0&destinations=${destinations}&annotations=distance,duration`;
-  let response=await fetch(osrm);
-  if(!response.ok)throw new Error(`Service d’itinéraire indisponible (${response.status}).`);
-  let data=await response.json();
-  if(data.code!=='Ok')throw new Error('Le service d’itinéraire n’a pas renvoyé de résultat exploitable.');
-  validStations.forEach((st,i)=>{
-   let distance=data.distances?.[0]?.[i],duration=data.durations?.[0]?.[i];
-   routeResults[st.id]=(distance==null||duration==null)?
-     {error:'Aucun trajet routier trouvé'}:
-     {distanceKm:distance/1000,durationMin:duration/60,originLabel:origin.label};
-  });
-  localStorage.setItem(routeCacheKey(originText,validStations.map(s=>s.id)),JSON.stringify(routeResults));
-  $('routeStatus').innerHTML=`<span class="good">Distances mises à jour depuis ${origin.label}.</span>`;
-  compare();renderStations();
- }catch(err){
-  $('routeStatus').innerHTML=`<span class="bad">${err.message}</span>`;
+ }catch(e){}
+ return{origin,stations:shortlist.slice(0,limit)};
+}
+async function calculateRoutes(){
+ let button=$('routeButton');button.classList.add('loading');button.textContent='Calcul en cours…';
+ $('routeStatus').textContent='Recherche des Superchargeurs les plus proches…';
+ try{
+   await compare();
  }finally{
-  button.classList.remove('loading');button.textContent='Calculer les distances et temps de trajet';
+   button.classList.remove('loading');button.textContent='Recalculer les 10 Superchargeurs les plus proches';
  }
 }
 function routeHtml(st){
@@ -205,6 +219,99 @@ function acPowerAtSoc(soc,stationMax){
  if(soc<99)return p*.72;
  return p*.42;
 }
+
+let pricingRuleSeq=0;
+function ruleId(){pricingRuleSeq+=1;return `rule-${pricingRuleSeq}`}
+
+function pricingRuleTemplate(rule={}){
+ let id=ruleId(),scope=rule.scope||'allDay',billing=rule.billing||'kwh';
+ return `<div class="pricing-rule" data-rule-id="${id}">
+   <div class="rule-title"><b>Tarif</b><button type="button" class="danger" onclick="removePricingRule('${id}')">Supprimer</button></div>
+   <div class="pricing-grid">
+     <div><label>Application</label><select class="pr-scope" onchange="refreshPricingRule('${id}')">
+       <option value="allDay" ${scope==='allDay'?'selected':''}>Toute la journée</option>
+       <option value="timeWindow" ${scope==='timeWindow'?'selected':''}>Créneau horaire</option>
+     </select></div>
+     <div><label>Mode de facturation</label><select class="pr-billing" onchange="refreshPricingRule('${id}')">
+       <option value="kwh" ${billing==='kwh'?'selected':''}>Tarif au kWh</option>
+       <option value="minute" ${billing==='minute'?'selected':''}>Tarif à la minute</option>
+     </select></div>
+     <div class="pr-time"><label>Début du créneau</label><input class="pr-start" type="time" value="${rule.start||'00:00'}"></div>
+     <div class="pr-time"><label>Fin du créneau</label><input class="pr-end" type="time" value="${rule.end||'24:00'}"></div>
+     <div class="pr-kwh"><label>Prix (€ / kWh)</label><input class="pr-price-kwh" type="number" min="0" step=".001" value="${rule.pricePerKwh??0.29}"></div>
+     <div class="pr-minute"><label>Prix de charge (€ / min)</label><input class="pr-charge-min" type="number" min="0" step=".001" value="${rule.chargePerMinute??0}"></div>
+     <div><label>Frais de connexion (€)</label><input class="pr-connection" type="number" min="0" step=".01" value="${rule.connectionFee??0}"></div>
+     <div><label>Occupation sans charger (€ / min)</label><input class="pr-idle-min" type="number" min="0" step=".001" value="${rule.idlePerMinute??0}"></div>
+   </div>
+ </div>`;
+}
+function addPricingRule(rule={}){
+ $('pricingRules').insertAdjacentHTML('beforeend',pricingRuleTemplate(rule));
+ let el=$('pricingRules').lastElementChild;refreshPricingRule(el.dataset.ruleId);
+}
+function removePricingRule(id){
+ let el=document.querySelector(`[data-rule-id="${id}"]`);if(el)el.remove();
+ if(!$('pricingRules').children.length)addPricingRule();
+}
+function refreshPricingRule(id){
+ let el=document.querySelector(`[data-rule-id="${id}"]`);if(!el)return;
+ let scope=el.querySelector('.pr-scope').value,billing=el.querySelector('.pr-billing').value;
+ el.querySelectorAll('.pr-time').forEach(x=>x.classList.toggle('hidden',scope!=='timeWindow'));
+ el.querySelectorAll('.pr-kwh').forEach(x=>x.classList.toggle('hidden',billing!=='kwh'));
+ el.querySelectorAll('.pr-minute').forEach(x=>x.classList.toggle('hidden',billing!=='minute'));
+}
+function readPricingRules(){
+ return {type:'rules',rules:[...document.querySelectorAll('#pricingRules .pricing-rule')].map(el=>({
+   scope:el.querySelector('.pr-scope').value,start:el.querySelector('.pr-start').value||'00:00',end:el.querySelector('.pr-end').value||'24:00',
+   billing:el.querySelector('.pr-billing').value,pricePerKwh:+el.querySelector('.pr-price-kwh').value||0,
+   chargePerMinute:+el.querySelector('.pr-charge-min').value||0,connectionFee:+el.querySelector('.pr-connection').value||0,
+   idlePerMinute:+el.querySelector('.pr-idle-min').value||0
+ }))};
+}
+function legacyPricingToRules(pricing){
+ if(!pricing)return[{scope:'allDay',billing:'kwh',pricePerKwh:.29,connectionFee:0,idlePerMinute:0}];
+ if(pricing.type==='rules')return pricing.rules||[];
+ if(pricing.type==='kwh')return[{scope:'allDay',billing:'kwh',pricePerKwh:pricing.pricePerKwh||0,connectionFee:0,idlePerMinute:0}];
+ if(pricing.type==='timeBandsKwh')return(pricing.bands||[]).map(b=>({scope:'timeWindow',start:b.start,end:b.end,billing:'kwh',pricePerKwh:b.pricePerKwh||0,connectionFee:0,idlePerMinute:0}));
+ if(pricing.type==='kwhPlusParking')return[{scope:'allDay',billing:'kwh',pricePerKwh:pricing.pricePerKwh||0,connectionFee:0,idlePerMinute:pricing.parkingPerMinute||0}];
+ if(pricing.type==='accessPlusTime')return[
+  {scope:'timeWindow',start:pricing.dayStart||'08:00',end:pricing.dayEnd||'20:00',billing:'minute',chargePerMinute:(pricing.dayPerHour||0)/60,connectionFee:pricing.accessFee||0,idlePerMinute:0},
+  {scope:'timeWindow',start:pricing.dayEnd||'20:00',end:pricing.dayStart||'08:00',billing:'minute',chargePerMinute:(pricing.nightPerHour||0)/60,connectionFee:pricing.accessFee||0,idlePerMinute:0}
+ ];
+ if(pricing.type==='freeWindowUnknownAfter')return[{scope:'allDay',billing:'minute',chargePerMinute:0,connectionFee:0,idlePerMinute:0}];
+ return[{scope:'allDay',billing:'kwh',pricePerKwh:.29,connectionFee:0,idlePerMinute:0}];
+}
+function loadPricingRules(pricing){
+ $('pricingRules').innerHTML='';let rules=legacyPricingToRules(pricing);if(!rules.length)rules=[{}];rules.forEach(addPricingRule);
+}
+function toggleAccessMode(){
+ let scheduled=$('fAccessMode').value==='schedule';$('scheduleBox').classList.toggle('hidden',!scheduled);
+}
+function minuteOfSession(startMin,offset){return(startMin+offset)%1440}
+function inWindow(m,start,end){
+ let s=mins(start),e=end==='24:00'?1440:mins(end);if(s===e)return true;return s<e?(m>=s&&m<e):(m>=s||m<e);
+}
+function ruleForMinute(rules,m){
+ let specific=(rules||[]).find(r=>r.scope==='timeWindow'&&inWindow(m,r.start||'00:00',r.end||'24:00'));
+ return specific||(rules||[]).find(r=>r.scope==='allDay')||null;
+}
+function unplugDurationMinutes(startTime,chargeMinutes,unplugTime){
+ if(!unplugTime)return chargeMinutes;
+ let start=mins(startTime),unplug=mins(unplugTime),duration=unplug-start;if(duration<0)duration+=1440;
+ return Math.max(chargeMinutes,duration);
+}
+function priceWithRules(pp,startMin,chargeMinutes,billedEnergy,unplugTime,startTime){
+ let rules=pp.rules||[],startRule=ruleForMinute(rules,startMin);if(!startRule)return{error:'Aucun tarif applicable à l’heure de branchement'};
+ let connection=startRule.connectionFee||0,chargeCost=0,idleCost=0,energyPerMinute=chargeMinutes>0?billedEnergy/chargeMinutes:0;
+ for(let i=0;i<Math.ceil(chargeMinutes);i++){
+   let m=minuteOfSession(startMin,i),rule=ruleForMinute(rules,m);if(!rule)return{error:'Aucun tarif défini pour une partie de la charge'};
+   let fraction=Math.min(1,chargeMinutes-i);
+   if(rule.billing==='kwh')chargeCost+=energyPerMinute*fraction*(rule.pricePerKwh||0);else chargeCost+=fraction*(rule.chargePerMinute||0);
+ }
+ let occupied=unplugDurationMinutes(startTime,chargeMinutes,unplugTime);
+ for(let i=Math.ceil(chargeMinutes);i<Math.ceil(occupied);i++){let rule=ruleForMinute(rules,minuteOfSession(startMin,i));if(rule)idleCost+=(rule.idlePerMinute||0)}
+ return{total:connection+chargeCost+idleCost,connection,chargeCost,idleCost,occupiedMinutes:occupied};
+}
 function daySchedule(st,dateStr){let d=new Date(dateStr+'T12:00:00');return st.access?.days?.[String(d.getDay())]}
 function accessStatus(st,dateStr,timeStr){if(!st.access?.limited)return{canStart:true,remaining:Infinity,label:'Accessible 24 h/24'};let sch=daySchedule(st,dateStr);if(!sch||!sch.open)return{canStart:false,remaining:0,label:'Fermé ce jour'};let t=mins(timeStr),s=mins(sch.start),e=sch.end==='24:00'?1440:mins(sch.end);if(t<s||t>=e)return{canStart:false,remaining:0,label:`Accessible ${sch.start}–${sch.end}`};return{canStart:true,remaining:e-t,label:`Accessible ${sch.start}–${sch.end}`,close:sch.end}}
 function chargeBase(st,now,target,condition='normal',profile='realistic'){
@@ -220,37 +327,45 @@ function chargeBase(st,now,target,condition='normal',profile='realistic'){
 function bandAt(pp,m){return pp.bands.find(x=>m>=mins(x.start)&&m<(x.end==='24:00'?1440:mins(x.end)))}
 function energyCostBands(pp,startMin,durationMin,totalEnergy){let cost=0,remaining=durationMin,cur=startMin,energyPerMin=totalEnergy/durationMin;while(remaining>0){let m=cur%1440,b=bandAt(pp,m);if(!b)return null;let end=b.end==='24:00'?1440:mins(b.end),chunk=Math.min(remaining,end-m);cost+=chunk*energyPerMin*b.pricePerKwh;cur+=chunk;remaining-=chunk}return cost}
 function minutesInWindow(start,duration,ws,we){let s=mins(ws),e=mins(we),c=0;for(let i=0;i<Math.ceil(duration);i++){let m=(start+i)%1440;if(s<e?(m>=s&&m<e):(m>=s||m<e))c++}return c}
-function simulate(st,dateStr,timeStr,now,target,condition='normal',profile='realistic'){
+function simulate(st,dateStr,timeStr,now,target,condition='normal',profile='realistic',unplugTime=''){
  let a=accessStatus(st,dateStr,timeStr);if(!a.canStart)return{unavailable:true,message:a.label};
  let b=chargeBase(st,now,target,condition,profile),allowed=b.minutes,truncated=false;
  if(st.access?.limited&&st.access.afterCloseMode==='must_stop'&&b.minutes>a.remaining){allowed=a.remaining;truncated=true}
  let ratio=allowed/b.minutes,deliveredBilled=b.billed*ratio,deliveredBatt=b.batt*ratio,reached=now+(target-now)*ratio,start=mins(timeStr),pp=st.pricing,total=0,unknown=false;
- if(pp.type==='kwh')total=deliveredBilled*pp.pricePerKwh;
+ let pricingDetails={connection:0,chargeCost:0,idleCost:0,occupiedMinutes:allowed};
+ if(pp.type==='rules'){let priced=priceWithRules(pp,start,allowed,deliveredBilled,unplugTime,timeStr);if(priced.error)return{unavailable:true,message:priced.error};total=priced.total;pricingDetails=priced}
+ else if(pp.type==='kwh')total=deliveredBilled*pp.pricePerKwh;
  else if(pp.type==='timeBandsKwh'){let c=energyCostBands(pp,start,allowed,deliveredBilled);if(c===null)return{unavailable:true,message:'Tarif absent pour une partie de la session'};total=c}
- else if(pp.type==='kwhPlusParking'){let parking=Math.max(0,allowed-pp.freeMinutes)*pp.parkingPerMinute;if(minutesInWindow((start+pp.freeMinutes)%1440,Math.max(0,allowed-pp.freeMinutes),pp.nightStart,pp.nightEnd)>0)parking=Math.min(parking,pp.nightCap);total=deliveredBilled*pp.pricePerKwh+parking}
- else if(pp.type==='accessPlusTime'){let paid=Math.max(0,allowed-pp.freeMinutes),dayM=minutesInWindow((start+pp.freeMinutes)%1440,paid,pp.dayStart,pp.dayEnd);total=pp.accessFee+dayM*(pp.dayPerHour/60)}
+ else if(pp.type==='kwhPlusParking'){let parking=Math.max(0,allowed-pp.freeMinutes)*pp.parkingPerMinute;if(minutesInWindow((start+pp.freeMinutes)%1440,Math.max(0,allowed-pp.freeMinutes),pp.nightStart,pp.nightEnd)>0)parking=Math.min(parking,pp.nightCap);total=deliveredBilled*pp.pricePerKwh+parking;pricingDetails.idleCost=parking}
+ else if(pp.type==='accessPlusTime'){let paid=Math.max(0,allowed-pp.freeMinutes),dayM=minutesInWindow((start+pp.freeMinutes)%1440,paid,pp.dayStart,pp.dayEnd);total=pp.accessFee+dayM*(pp.dayPerHour/60);pricingDetails.connection=pp.accessFee||0;pricingDetails.chargeCost=dayM*(pp.dayPerHour/60)}
  else if(pp.type==='freeWindowUnknownAfter'){if(allowed<=pp.freeMinutes)total=0;else unknown=true}
- return{...b,allowed,deliveredBilled,deliveredBatt,reached,total,truncated,access:a,unknown}
+ return{...b,allowed,deliveredBilled,deliveredBatt,reached,total,truncated,access:a,unknown,pricingDetails}
 }
-function compare(){
+async function compare(){
  let now=+$('simNow').value,target=+$('simTarget').value,date=$('simDate').value,time=$('simTime').value;
- let condition=$('simCondition').value,profile=$('simProfile').value;
+ let condition=$('simCondition').value,profile=$('simProfile').value,unplugTime=$('simUnplugTime').value;
  if(target<=now){$('results').innerHTML='<div class="bad">Objectif invalide.</div>';return}
- let rows=stations.filter(st=>!st.temporarilyUnavailable).map(st=>({st,r:simulate(st,date,time,now,target,condition,profile)}));
- rows.sort((x,y)=>(x.r.unavailable||x.r.unknown?999:x.r.total)-(y.r.unavailable||y.r.unknown?999:y.r.total));
- if(!rows.length){
-  $('results').innerHTML='<div class="warn"><b>Aucune borne disponible à comparer.</b><br>Réactive au moins une borne depuis l’onglet Bornes.</div>';
-  return;
+ $('results').innerHTML='<div class="small">Calcul des 10 Superchargeurs les plus proches…</div>';
+ try{
+   let nearest=await nearestSuperchargers(10);
+   $('routeStatus').innerHTML=`<span class="good">${nearest.stations.length} Superchargeurs affichés depuis ${nearest.origin.label}.</span>`;
+   let rows=nearest.stations.map(st=>({st,r:simulate(st,date,time,now,target,condition,profile,unplugTime)}));
+   if(!rows.length){$('results').innerHTML='<div class="warn">Aucun Superchargeur exploitable n’a été trouvé.</div>';return}
+   $('results').innerHTML=rows.map(({st,r},idx)=>{
+    let route=routeResults[st.id],distance=route?`${route.distanceKm.toFixed(1)} km · ${Math.round(route.durationMin)} min`:`≈ ${st._airKm.toFixed(1)} km à vol d’oiseau`;
+    if(r.unavailable)return`<div class="station"><div class="station-head"><div><h3>${idx+1}. ${st.name}</h3><div class="small">${distance}<br>${r.message}</div></div><div class="bad"><b>Indisponible</b></div></div></div>`;
+    if(r.unknown)return`<div class="station"><div class="station-head"><div><h3>${idx+1}. ${st.name}</h3><div class="small">${distance}<br>${fmtMin(r.allowed)} nécessaires</div></div><div class="warn"><b>Tarif incomplet</b></div></div></div>`;
+    let info='';
+    if(st.access?.limited&&st.access.afterCloseMode==='exit_allowed')info=`<div class="good small">✓ Entrée avant ${r.access.close}; la charge peut continuer après fermeture.</div>`;
+    if(r.truncated)info=`<div class="warn small"><b>Charge arrêtée à ${r.access.close}</b><br>Niveau estimé : ${r.reached.toFixed(0)} %.</div>`;
+    let taper=target>80?`<div class="warn small">Le ralentissement au-dessus de 80 % est inclus.</div>`:'';
+    let breakdown=r.pricingDetails&&(r.pricingDetails.connection||r.pricingDetails.idleCost)?`<div class="small">Connexion : ${(r.pricingDetails.connection||0).toFixed(2)} € · Occupation : ${(r.pricingDetails.idleCost||0).toFixed(2)} €</div>`:'';
+    return`<div class="station"><div class="station-head"><div><h3>${idx+1}. ${st.name}</h3><span class="badge">${st.powerKw} kW</span><span class="badge">${st.stalls||'?'} stalles</span><span class="badge">MAJ ${st.lastUpdated||'—'}</span></div><div class="cost">${r.total.toFixed(2)} €</div></div><div class="routeinfo"><b>${distance}</b></div><div class="small">${r.access.label}<br><b>${fmtMin(r.allowed)}</b> · fin estimée : <b>${finishTime(date,time,r.allowed)}</b><br>${r.deliveredBilled.toFixed(1)} kWh facturés · puissance moyenne ≈ ${r.avg.toFixed(0)} kW</div>${breakdown}${info}${taper}<div class="row" style="margin-top:9px"><button class="secondary" onclick="window.open('${mapsUrl(st.address)}','_blank')">Itinéraire Google Maps</button>${st.teslaUrl?`<button class="secondary" onclick="window.open('${st.teslaUrl}','_blank')">Fiche Tesla</button>`:''}</div></div>`;
+   }).join('');
+ }catch(err){
+   $('results').innerHTML=`<div class="bad">${err.message}</div>`;
+   $('routeStatus').innerHTML='<span class="bad">Impossible de calculer la proximité. Vérifie l’adresse ou autorise la localisation.</span>';
  }
- $('results').innerHTML=rows.map(({st,r})=>{
-  if(r.unavailable)return`<div class="station"><div class="station-head"><div><h3>${st.name}</h3><div class="small">${r.message}</div></div><div class="bad"><b>Indisponible</b></div></div></div>`;
-  if(r.unknown)return`<div class="station"><div class="station-head"><div><h3>${st.name}</h3><div class="small">${fmtMin(r.allowed)} nécessaires · fin estimée : ${finishTime(date,time,r.allowed)}</div></div><div class="warn"><b>Tarif incomplet</b></div></div></div>`;
-  let info='';
-  if(st.access?.limited&&st.access.afterCloseMode==='exit_allowed')info=`<div class="good small">✓ Entrée avant ${r.access.close}; la charge peut continuer après fermeture.</div>`;
-  if(r.truncated)info=`<div class="warn small"><b>Charge arrêtée à ${r.access.close}</b><br>Niveau estimé à la fermeture : ${r.reached.toFixed(0)} % au lieu de ${target} %.</div>`;
-  let taper=target>80&&st.kind==='DC'?`<div class="warn small">Le ralentissement au-dessus de 80 % est inclus.</div>`:'';
-  return`<div class="station"><div class="station-head"><div><h3>${st.name}</h3><span class="badge">${st.kind}</span><span class="badge">${st.powerKw} kW</span><span class="badge">MAJ ${st.lastUpdated||'—'}</span></div><div class="cost">${r.total.toFixed(2)} €</div></div><div class="small">${r.access.label}<br><b>${fmtMin(r.allowed)}</b> · fin estimée : <b>${finishTime(date,time,r.allowed)}</b><br>${r.deliveredBilled.toFixed(1)} kWh facturés · puissance moyenne ≈ ${r.avg.toFixed(0)} kW</div>${info}${taper}${routeHtml(st)}${st.access?.afterCloseNote?`<div class="small" style="margin-top:5px">${st.access.afterCloseNote}</div>`:''}</div>`
- }).join('')
 }
 function mapsUrl(a){
  let origin=$('simOrigin')?.value?.trim()||localStorage.getItem('tccDefaultOrigin')||'';
@@ -264,7 +379,7 @@ function renderStations(){
   <div>
    <h3>${st.name}</h3>
    ${st.temporarilyUnavailable?'<span class="badge badge-unavailable">Temporairement indisponible</span>':''}
-   <div class="small">${st.address||'Aucune adresse'}<br>${st.access?.limited?(st.access.afterCloseMode==='exit_allowed'?'Charge possible après fermeture':'Arrêt obligatoire à la fermeture'):'Sans restriction horaire enregistrée'}</div>
+   <div class="small">${st.address||'Aucune adresse'}<br>${st.access?.limited?(st.access.afterCloseMode==='exit_allowed'?'Charge possible après fermeture':'Arrêt obligatoire à la fermeture'):'Accessible 24 h/24'}</div>
    ${routeHtml(st)}
   </div>
  </div>
@@ -285,11 +400,27 @@ function toggleStationAvailability(id){
  compare();
 }
 function buildDays(){$('daysForm').innerHTML=DAYS.map((d,i)=>`<div class="dayrow"><b>${d}</b><label><input id="dOpen${i}" type="checkbox"> ouvert</label><input id="dStart${i}" type="time" value="09:00"><input id="dEnd${i}" type="time" value="20:00"></div>`).join('')}
-function resetForm(){$('formTitle').textContent='Ajouter une borne';$('editId').value='';$('fName').value='';$('fAddress').value='';$('fKind').value='AC';$('fPower').value=11;$('fPrice').value=.29;$('fLimited').checked=false;$('fTemporarilyUnavailable').checked=false;$('fCloseMode').value='must_stop';$('fCloseNote').value='';$('fUpdated').valueAsDate=new Date();for(let i=0;i<7;i++){$('dOpen'+i).checked=i!==0;$('dStart'+i).value='09:00';$('dEnd'+i).value='20:00'}}
-function editStation(id){let st=stations.find(x=>x.id===id);if(!st)return;document.querySelector('[data-tab="edit"]').click();$('formTitle').textContent='Modifier la borne';$('editId').value=st.id;$('fName').value=st.name;$('fAddress').value=st.address||'';$('fKind').value=st.kind;$('fPower').value=st.powerKw;$('fPrice').value=st.pricing.pricePerKwh??.29;$('fLimited').checked=!!st.access?.limited;$('fTemporarilyUnavailable').checked=!!st.temporarilyUnavailable;$('fCloseMode').value=st.access?.afterCloseMode||'must_stop';$('fCloseNote').value=st.access?.afterCloseNote||'';$('fUpdated').value=st.lastUpdated||new Date().toISOString().slice(0,10);for(let i=0;i<7;i++){let d=st.access?.days?.[String(i)]||{open:true,start:'09:00',end:'20:00'};$('dOpen'+i).checked=d.open;$('dStart'+i).value=d.start;$('dEnd'+i).value=d.end}}
-function saveStation(){let id=$('editId').value||('station-'+Date.now()),days={};for(let i=0;i<7;i++)days[String(i)]={open:$('dOpen'+i).checked,start:$('dStart'+i).value,end:$('dEnd'+i).value};let st={id,name:$('fName').value.trim()||'Nouvelle borne',address:$('fAddress').value.trim(),kind:$('fKind').value,powerKw:+$('fPower').value,pricing:{type:'kwh',pricePerKwh:+$('fPrice').value},lastUpdated:$('fUpdated').value,temporarilyUnavailable:$('fTemporarilyUnavailable').checked,access:{limited:$('fLimited').checked,days,afterCloseMode:$('fCloseMode').value,afterCloseNote:$('fCloseNote').value.trim()}};let i=stations.findIndex(x=>x.id===id);if(i>=0)stations[i]=st;else stations.push(st);saveLocal();renderStations();resetForm();alert('Borne enregistrée.')}
+function resetForm(){
+ $('formTitle').textContent='Ajouter une borne';$('editId').value='';$('fName').value='';$('fAddress').value='';$('fKind').value='AC';$('fPower').value=11;
+ $('fAccessMode').value='always';$('fTemporarilyUnavailable').checked=false;$('fCloseMode').value='must_stop';$('fCloseNote').value='';$('fUpdated').valueAsDate=new Date();
+ for(let i=0;i<7;i++){$('dOpen'+i).checked=true;$('dStart'+i).value='00:00';$('dEnd'+i).value='24:00'}
+ loadPricingRules({type:'kwh',pricePerKwh:.29});toggleAccessMode();
+}
+function editStation(id){
+ let st=stations.find(x=>x.id===id);if(!st)return;document.querySelector('[data-tab="edit"]').click();
+ $('formTitle').textContent='Modifier la borne';$('editId').value=st.id;$('fName').value=st.name;$('fAddress').value=st.address||'';$('fKind').value=st.kind;$('fPower').value=st.powerKw;
+ $('fAccessMode').value=st.access?.limited?'schedule':'always';$('fTemporarilyUnavailable').checked=!!st.temporarilyUnavailable;$('fCloseMode').value=st.access?.afterCloseMode||'must_stop';$('fCloseNote').value=st.access?.afterCloseNote||'';$('fUpdated').value=st.lastUpdated||new Date().toISOString().slice(0,10);
+ for(let i=0;i<7;i++){let d=st.access?.days?.[String(i)]||{open:true,start:'00:00',end:'24:00'};$('dOpen'+i).checked=d.open;$('dStart'+i).value=d.start;$('dEnd'+i).value=d.end}
+ loadPricingRules(st.pricing);toggleAccessMode();
+}
+function saveStation(){
+ let id=$('editId').value||('station-'+Date.now()),days={};
+ for(let i=0;i<7;i++)days[String(i)]={open:$('dOpen'+i).checked,start:$('dStart'+i).value,end:$('dEnd'+i).value};
+ let st={id,name:$('fName').value.trim()||'Nouvelle borne',address:$('fAddress').value.trim(),kind:$('fKind').value,source:'custom',powerKw:+$('fPower').value,pricing:readPricingRules(),lastUpdated:$('fUpdated').value,temporarilyUnavailable:$('fTemporarilyUnavailable').checked,access:{limited:$('fAccessMode').value==='schedule',days,afterCloseMode:$('fCloseMode').value,afterCloseNote:$('fCloseNote').value.trim()}};
+ let i=stations.findIndex(x=>x.id===id);if(i>=0)stations[i]=st;else stations.push(st);saveLocal();renderStations();resetForm();alert('Borne enregistrée.');
+}
 function deleteStation(id){if(confirm('Supprimer cette borne ?')){stations=stations.filter(x=>x.id!==id);saveLocal();renderStations()}}
-fetch('stations.json').then(r=>r.json()).then(x=>{defaultStations=x;let saved=localStations();if(saved)stations=saved;else{let custom=oldCustomStations();stations=[...x,...custom];saveLocal()}compare();renderStations()});
+fetch('stations.json').then(r=>r.json()).then(x=>{defaultStations=x;let saved=localStations();if(saved)stations=saved;else{stations=x;saveLocal()}$('results').innerHTML='<div class="small">Saisis une adresse de départ puis touche Simuler pour afficher les 10 Superchargeurs les plus proches.</div>';renderStations()});
 buildDays();resetForm();
 </script>
 </body></html>
